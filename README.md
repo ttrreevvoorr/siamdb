@@ -1,10 +1,14 @@
 # Siam DB
+Server side in-app memory database for node
+
+
+---
+
+**⚠️ This is not production-ready software. This project is in active development. ⚠️**
+
+---
 
 ## Install
-
-```
-$ npm i siamdb 
-```
 
 
 ## Usage
