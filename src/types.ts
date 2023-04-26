@@ -26,4 +26,5 @@ export interface CollectionType {
   find(where: { id?: string, [key:string]: any }): ResponseDoc[];
   update(where: { id?: string, [key:string]: any }, content:any): ResponseDoc[] | Error;
   create(content:any): string;
+  delete(where: { id?: string, [key:string]: any }): string[] | Error;
 }

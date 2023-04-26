@@ -6,7 +6,6 @@ import { Options, Schema, ResponseDoc, IdTypeOptions } from "../src/types"
 const options: Options = { generateIds: IdTypeOptions.AUTOINC }
 const schema: Schema = {
   users: { name: "string", age: "number", bio: "object" },
-  products: { name: "string", price: "number", description: "string" },
 }
 const db = createDatabase({ options, schema })
 
@@ -67,6 +66,7 @@ describe("SiamDatabase", () => {
         )
       })
     })
+
     describe(".create(...) without a schema", () => {
       const collection = db.collection("foo")
       it("should return a Collection object", () => {
@@ -74,7 +74,7 @@ describe("SiamDatabase", () => {
         expect(collection).to.have.property("create")
         expect(collection).to.have.property("find")
         expect(collection).to.have.property("update")
-        // expect(collection).to.have.property("delete");
+        expect(collection).to.have.property("delete")
       })
 
       it("should have two successful .create({...})", () => {
@@ -215,6 +215,43 @@ describe("SiamDatabase", () => {
         expect(() =>
           collection.update({ name: "Geronimo" }, { age: 23 })
         ).to.throw("Could not find the document to be updated")
+      })
+    })
+
+    describe(".delete({...})", () => {
+      it("should delete a document by id", () => {
+        const collection = db.collection("users")
+        const id = collection.create({
+          name: "John",
+          email: "john@example.com",
+          age: 25,
+        })
+        collection.delete({ id })
+        expect(collection.find({ id })).to.be.an("array").that.is.empty
+      })
+
+      it("should delete documents that match a query", () => {
+        const collection = db.collection("users")
+        collection.create({ name: "John", age: 25 })
+        collection.create({ name: "Jane", age: 30 })
+        collection.delete({ age: 25 })
+        const john = collection.find({ name: "John" })
+        const jane = collection.find({ name: "Jane" })
+        expect(john).to.be.an("array").that.is.empty
+        expect(jane).to.be.an("array").that.is.not.empty
+      })
+
+      it("should throw an error when appropriate on .delete({...})", () => {
+        const collection = db.collection("users")
+        expect(() => collection.delete({})).to.throw(
+          "'where' is a required field of 'delete'"
+        )
+        expect(() => collection.delete({ id: "abc" })).to.throw(
+          "Could not find the document to be deleted"
+        )
+        expect(() => collection.delete({ name: "Geronimo" })).to.throw(
+          "Could not find the document to be deleted"
+        )
       })
     })
   })

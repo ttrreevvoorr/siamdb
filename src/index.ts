@@ -190,6 +190,42 @@ class Collection implements CollectionType {
   }
 
   /**
+   * Delte: Deletes one or many documents in the collection, always returns an array
+   * @param {object} If contains an id field, it deletes the document with that ID. Otherwise, it deletes all documents that match the query.
+   * @return {array} An array of strings containing the deleted ids
+   **/
+  delete(where: { id?: string; [key: string]: any }): string[] | Error {
+    if (!where || !Object.keys(where).length) {
+      throw new Error("'where' is a required field of 'delete'")
+    }
+
+    if (where.id) {
+      if (!this.documents[where.id]) {
+        throw new Error("Could not find the document to be deleted")
+      }
+      delete this.documents[where.id]
+      return [where.id]
+    } else {
+      const response = [] as string[]
+      for (const key in this.documents as Document) {
+        for (const query in where) {
+          if (
+            this.documents[key].content[query] &&
+            this.documents[key].content[query] === where[query]
+          ) {
+            delete this.documents[key]
+            response.push(key)
+          }
+        }
+      }
+      if (!response.length) {
+        throw new Error("Could not find the document to be deleted")
+      }
+      return response as string[]
+    }
+  }
+
+  /**
    * validateTypes
    * @param content
    * @returns error or null
