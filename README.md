@@ -12,8 +12,12 @@ Server side in-app memory database for node
 
 
 ## Usage
+
+### Instantiate database
 ```
-const options = {};
+import { createDatabase } from "siamdb"
+
+const options = { generateIds: "autoinc" };
 const schema = [
   {
     name: "users",
@@ -26,6 +30,51 @@ const schema = [
   }
 ]
 const db = createDatabase(options, schema)
+```
+
+#### Create
+
+```
+const collection = db.users;
+
+collection.create({
+  name: "Emerald",
+  age: 18,
+  bio: {
+    english: "Ipsum lorem dolar",
+    spanish: "Ipsum lorem dolar",
+  },
+  and: "any",
+  other: "key",
+  value: "pairs",
+  you: "want"
+}
+```
+
+
+#### Get
+
+```
+const collection = db.users;
+...
+const user1 = collection.get({ id: "1" })[0];
+```
+
+or
+
+```
+const collection = db.users;
+...
+const user1 = collection.get({ name: "Emerald" })[0];
+```
+
+
+#### Update
+
+```
+const collection = db.users;
+...
+collection.update({ name: "Emerald" }, { age: 23 });
 ```
 
 ## Options
