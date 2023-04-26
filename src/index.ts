@@ -9,15 +9,15 @@ import {
   ResponseDoc,
 } from "./types"
 
-const defaultOptions = {
+const DEFAULT_OPTIONS: Options = {
   generateIds: IdTypeOptions.AUTOINC,
 }
 
 export class SiamDatabase {
-  private events: EventEmitter = new EventEmitter()
-  private options: Options = defaultOptions
-  private schema: Schema
-  collections: { [key: string]: CollectionType }
+  private readonly events: EventEmitter = new EventEmitter()
+  private readonly options: Options
+  private readonly schema: Schema
+  private readonly collections: Record<string, CollectionType>
 
   constructor({
     options = {},
@@ -27,23 +27,21 @@ export class SiamDatabase {
     schema?: Schema
   }) {
     this.options = {
-      generateIds: options.generateIds || defaultOptions.generateIds,
+      ...DEFAULT_OPTIONS,
+      ...options,
     }
-    this.schema = schema || []
+    this.schema = schema
     this.collections = {}
-    if (!Object.keys(this.schema).length) {
-      this.collections = {}
-    } else {
-      for (const collectionName in schema) {
-        this.collections[collectionName] = new Collection({
-          schema: schema[collectionName],
-          options: this.options,
-        })
-      }
+
+    for (const collectionName in schema) {
+      this.collections[collectionName] = new Collection({
+        schema: schema[collectionName],
+        options: this.options,
+      })
     }
   }
 
-  collection(collection: string): CollectionType {
+  public collection(collection: string): CollectionType {
     if (!this.collections[collection]) {
       this.collections[collection] = new Collection({
         options: this.options,
@@ -54,9 +52,9 @@ export class SiamDatabase {
 }
 
 class Collection implements CollectionType {
-  private schema: Schema
-  private options: Options
-  private documents: any
+  private readonly schema: Schema
+  private readonly options: Options
+  private readonly documents: any
 
   constructor({ schema = {}, options }: { schema?: Schema; options: Options }) {
     this.schema = schema || {}
@@ -66,52 +64,53 @@ class Collection implements CollectionType {
 
   /**
    * Find an array of documents matching the query
-   * @param where: the id and/or any key:val pairs for an OR lookup
-   * @returns:array The documents stored in the collection that match the query
+   * @param {object} where: the id and/or any key:val pairs for an OR lookup
+   * @returns {array} The documents stored in the collection that match the query
    **/
-  find(where: { id?: string; [key: string]: any } = {}): ResponseDoc[] {
+  public find(where: { id?: string; [key: string]: any } = {}): ResponseDoc[] {
+    const results: ResponseDoc[] = []
+
     if (where.id) {
-      if (!this.documents[where.id]) {
-        return []
-        //throw new Error("Could not find any documents matching this query")
-      }
-      return [
-        {
+      const document = this.documents[where.id]
+
+      if (document) {
+        results.push({
           id: where.id,
-          ...this.documents[where.id],
-        },
-      ]
-    }
-    const response = [] as ResponseDoc[]
-    for (const key in this.documents as Document) {
-      for (const query in where) {
-        if (
-          this.documents[key].content[query] &&
-          this.documents[key].content[query] === where[query]
-        ) {
-          response.push({
+          ...document,
+        })
+      }
+    } else {
+      for (const key in this.documents as Document) {
+        const document = this.documents[key]
+        let docFound = true
+
+        for (const query in where) {
+          if (document.content[query] !== where[query]) {
+            docFound = false
+            break
+          }
+        }
+        if (docFound) {
+          results.push({
             id: key,
-            ...this.documents[key],
+            ...document,
           })
         }
       }
-      if (!response.length) {
-        //throw new Error("Could not find any documents matching this query")
-      }
     }
-    return response as ResponseDoc[]
+    return results
   }
 
   /**
    * Creates a document within a collection
-   * @param content: the content to created under this collection
-   * @returns id:string
+   * @param{any} content: the content to created under this collection
+   * @returns{string} The id of the inserted collection
    **/
-  create(content: any): string {
+  public create(content: any): string {
     this._validateTypes(content, this.schema)
 
     const id =
-      this.options.generateIds === "autoinc"
+      this.options.generateIds === IdTypeOptions.AUTOINC
         ? (Object.keys(this.documents).length + 1).toString()
         : randomUUID()
 
@@ -126,10 +125,10 @@ class Collection implements CollectionType {
 
   /**
    * Update: Updates one or many documents, always returns an array
-   * @param id?: id
-   * @return ResponseDoc[]
+   * @param{object} id?: id
+   * @return{array} ResponseDoc[]
    **/
-  update(
+  public update(
     where: { id?: string; [key: string]: any },
     content: object
   ): ResponseDoc[] | Error {
@@ -190,11 +189,11 @@ class Collection implements CollectionType {
   }
 
   /**
-   * Delte: Deletes one or many documents in the collection, always returns an array
+   * Delete: Deletes one or many documents in the collection, always returns an array
    * @param {object} If contains an id field, it deletes the document with that ID. Otherwise, it deletes all documents that match the query.
    * @return {array} An array of strings containing the deleted ids
    **/
-  delete(where: { id?: string; [key: string]: any }): string[] | Error {
+  public delete(where: { id?: string; [key: string]: any }): string[] | Error {
     if (!where || !Object.keys(where).length) {
       throw new Error("'where' is a required field of 'delete'")
     }
@@ -227,8 +226,9 @@ class Collection implements CollectionType {
 
   /**
    * validateTypes
-   * @param content
-   * @returns error or null
+   * @param{object} content
+   * @param{object} schema, optional
+   * @returns{true|boolean} error or null
    **/
   private _validateTypes(
     content: { [key: string]: any },
@@ -244,11 +244,16 @@ class Collection implements CollectionType {
       )
     }
 
-    Object.keys(content).forEach((key) => {
-      if (schema[key] && typeof content[key] !== schema[key]) {
-        throw new Error(`Content key ${key} is not of type ${schema[key]}`)
+    const contentKeys = Object.keys(content)
+    for (let i = 0; i < contentKeys.length; i++) {
+      const key = contentKeys[i]
+      const schemaType = schema[key]
+      const contentType = typeof content[key]
+
+      if (Object.keys(schema).includes(key) && contentType !== schemaType) {
+        throw new Error(`Content key ${key} is not of type ${schemaType}`)
       }
-    })
+    }
 
     return true
   }
