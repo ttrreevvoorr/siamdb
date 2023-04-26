@@ -10,7 +10,7 @@
 ## Installation
 
 ```
-npm install siam-database
+npm install siamdb
 ```
 
 ## Usage
