@@ -1,20 +1,29 @@
 
+//type IdTypeOptions = "autoinc" | "uuid";
+export enum IdTypeOptions {
+  AUTOINC = "autoinc",
+  UUID = "uuid"
+};
+
 export interface Options {
-  generateIds?: IdTypeOptions;
-  //backup?: {
-  //  files?: boolean;
-  //  interval?: number;
-  //  filePerCollection?: boolean;
-  //};
+    generateIds?: IdTypeOptions.AUTOINC | IdTypeOptions.UUID | undefined;
 }
 
 export interface Schema {
-  name: string;
-  properties: any;
+    [key:string]: any
 }
 
 export interface Document {
-  //id: string | number;
   content?: any;
   version?: number;
+}
+
+export interface ResponseDoc extends Document {
+  id: string;
+}
+
+export interface CollectionType {
+  find(where: { id?: string, [key:string]: any }): ResponseDoc[];
+  update(where: { id?: string, [key:string]: any }, content:any): ResponseDoc[] | Error;
+  create(content:any): string;
 }

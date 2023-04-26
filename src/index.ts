@@ -1,151 +1,165 @@
-const { randomUUID } = require("crypto");
-import { EventEmitter } from "events";
-import { Options, Schema, Document } from "./types";
-
-type IdTypeOptions = "autoinc" | "uuid";
+const { randomUUID } = require("crypto")
+import { EventEmitter } from "events"
+import {
+  Options,
+  Schema,
+  CollectionType,
+  IdTypeOptions,
+  Document,
+  ResponseDoc,
+} from "./types"
 
 const defaultOptions = {
-  generateIds: "uuid",
-};
+  generateIds: IdTypeOptions.AUTOINC,
+}
 
 export class SiamDatabase {
-  private events: EventEmitter = new EventEmitter();
-  private options: Options;
-  private schema: Schema[];
-  //public database: any = {};
-  [key: string]: any; // add this index signature
+  private events: EventEmitter = new EventEmitter()
+  private options: Options = defaultOptions
+  private schema: Schema
+  collections: { [key: string]: CollectionType }
 
   constructor({
     options = {},
-    schema = [],
+    schema = {},
   }: {
-    options?: Options;
-    schema?: Schema[];
+    options?: Options
+    schema?: Schema
   }) {
     this.options = {
       generateIds: options.generateIds || defaultOptions.generateIds,
-    };
-    this.schema = schema;
-
-    this.configureSchema(this.schema);
+    }
+    this.schema = schema || []
+    this.collections = {}
+    if (!Object.keys(this.schema).length) {
+      this.collections = {}
+    } else {
+      for (const collectionName in schema) {
+        this.collections[collectionName] = new Collection({
+          schema: schema[collectionName],
+          options: this.options,
+        })
+      }
+    }
   }
 
-  configureSchema(schema: Schema[]) {
-    if (!schema.length) {
-      throw new Error("SiamDB schema has not been defined");
-    }
-
-    schema.map((collection) => {
-      this[collection.name] = new Collection({
-        collection,
+  collection(collection: string): CollectionType {
+    if (!this.collections[collection]) {
+      this.collections[collection] = new Collection({
         options: this.options,
-      });
-
-      //this.database[collection.name] = new Collection({
-      //  collection,
-      //  options: this.options,
-      //});
-    });
+      })
+    }
+    return this.collections[collection]
   }
 }
 
-// import { siam } from siamdb
-// const db = siam.createDatabase(options, schema)
+class Collection implements CollectionType {
+  private schema: Schema
+  private options: Options
+  private documents: any
 
-class Collection {
-  //private documents: Document = {};
-  private schema: Schema;
-  private options: Options;
-  private documents: any;
-
-  constructor({
-    collection,
-    options,
-  }: {
-    collection: Schema;
-    options: Options;
-  }) {
-    this.schema = collection;
-    this.options = options;
-    this.documents = {};
+  constructor({ schema = {}, options }: { schema?: Schema; options: Options }) {
+    this.schema = schema || {}
+    this.options = options
+    this.documents = {}
   }
 
-  // Get collection item by ID
-  get(where: {
-    id?: string;
-    [key: string]: any;
-  }): Document | Document[] | Error {
+  /**
+   * Find an array of documents matching the query
+   * @param where: the id and/or any key:val pairs for an OR lookup
+   * @returns:array The documents stored in the collection that match the query
+   **/
+  find(where: { id?: string; [key: string]: any } = {}): ResponseDoc[] {
     if (where.id) {
-      if(!this.documents[where.id]){
-        throw new Error("Could not find any documents matching this query")
+      if (!this.documents[where.id]) {
+        return []
+        //throw new Error("Could not find any documents matching this query")
       }
-      return this.documents[where.id];
-    } else {
-      const response = [] as Document[];
-      for (const key in this.documents as Document) {
-        for (const query in where) {
-          if (
-            this.documents[key].content[query] &&
-            this.documents[key].content[query] === where[query]
-          ) {
-            response.push(this.documents[key]);
-          }
+      return [
+        {
+          id: where.id,
+          ...this.documents[where.id],
+        },
+      ]
+    }
+    const response = [] as ResponseDoc[]
+    for (const key in this.documents as Document) {
+      for (const query in where) {
+        if (
+          this.documents[key].content[query] &&
+          this.documents[key].content[query] === where[query]
+        ) {
+          response.push({
+            id: key,
+            ...this.documents[key],
+          })
         }
       }
-      if(!response.length){
-        throw new Error("Could not find any documents matching this query")
+      if (!response.length) {
+        //throw new Error("Could not find any documents matching this query")
       }
-      return response as Document[];
     }
-    return this.documents;
+    return response as ResponseDoc[]
   }
 
-  // Create new document in the collection
+  /**
+   * Creates a document within a collection
+   * @param content: the content to created under this collection
+   * @returns id:string
+   **/
   create(content: any): string {
-    // Validate keys
-    this._validateTypes(content);
+    this._validateTypes(content, this.schema)
 
     const id =
       this.options.generateIds === "autoinc"
         ? (Object.keys(this.documents).length + 1).toString()
-        : randomUUID();
+        : randomUUID()
 
     const document: Document = {
-      //id,
       content,
       version: 1,
-    };
+    }
 
-    this.documents[id] = document;
-    return id;
+    this.documents[id] = document
+    return id
   }
 
-  // Update
+  /**
+   * Update: Updates one or many documents, always returns an array
+   * @param id?: id
+   * @return ResponseDoc[]
+   **/
   update(
     where: { id?: string; [key: string]: any },
     content: object
-  ): Document | Document[] | Error {
+  ): ResponseDoc[] | Error {
     if (!where || !Object.keys(where).length) {
-      throw new Error("'where' is a required field of 'update'");
+      throw new Error("'where' is a required field of 'update'")
     }
-    this._validateTypes(content);
+    this._validateTypes(content, this.schema)
 
     if (where?.id) {
-      const id = where.id;
+      const id = where.id
       if (!this.documents[id]) {
-        throw new Error("Could not find the document to be updated");
+        throw new Error("Could not find the document to be updated")
       }
+
       this.documents[id] = {
         content: {
           ...this.documents[id].content,
           ...content,
         },
         version: this.documents[id].version + 1,
-      };
-      return this.documents[id];
+      }
+      return [
+        {
+          id,
+          content: this.documents[id].content,
+          version: this.documents[id].version,
+        },
+      ]
     } else {
-      //Object.keys(this.documents)
-      const response = [] as Document[];
+      const response = [] as ResponseDoc[]
       for (const key in this.documents as Document) {
         for (const query in where) {
           if (
@@ -158,42 +172,58 @@ class Collection {
                 ...content,
               },
               version: this.documents[key].version + 1,
-            };
-            response.push(this.documents[key]);
+            }
+            response.push({
+              id: key,
+              content: this.documents[key].content,
+              version: this.documents[key].version,
+            })
           }
         }
       }
       if (!response.length) {
-        throw new Error("Could not find the document to be updated");
+        throw new Error("Could not find the document to be updated")
       }
-      return response as Document[];
+      return response as ResponseDoc[]
     }
-    throw new Error("Could not find the document to be updated");
+    throw new Error("Could not find the document to be updated")
   }
 
-  private _validateTypes(content: { [key: string]: any }) {
-    if (!content || !Object.keys(content)) {
-      throw new Error("Can not create or update with an empty object");
+  /**
+   * validateTypes
+   * @param content
+   * @returns error or null
+   **/
+  private _validateTypes(
+    content: { [key: string]: any },
+    schema?: Schema
+  ): Error | true {
+    if (!schema || !Object.keys(schema).length) {
+      return true
     }
-    Object.keys(content).map((key) => {
-      if (
-        this.schema.properties[key] !== "any" &&
-        typeof content[key] !== this.schema.properties[key]
-      ) {
-        throw new Error(
-          `Content key ${key} is not of type ${this.schema.properties[key]}`
-        );
+
+    if (!content || !Object.keys(content).length) {
+      throw new Error(
+        "Can not create or update with an empty object. Please see the .delete() method if applicable"
+      )
+    }
+
+    Object.keys(content).forEach((key) => {
+      if (schema[key] && typeof content[key] !== schema[key]) {
+        throw new Error(`Content key ${key} is not of type ${schema[key]}`)
       }
-    });
+    })
+
+    return true
   }
 }
 
 export const createDatabase = ({
-  options,
-  schema,
+  options = {},
+  schema = {},
 }: {
-  options?: Options;
-  schema: Schema[];
+  options?: Options
+  schema?: Schema
 }) => {
-  return new SiamDatabase({ options, schema });
-};
+  return new SiamDatabase({ options, schema })
+}
