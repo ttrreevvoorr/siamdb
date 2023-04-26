@@ -1,5 +1,5 @@
 # Siam DB
-Serverside in-app memory database for node that provides a simple and lightweight database with support for multiple collections of documents.
+**S**erverside **I**n-**A**pp **M**emory **DB** for node that provides a simple and lightweight database with support for multiple collections of documents.
 
 ---
 
