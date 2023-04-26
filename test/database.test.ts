@@ -1,6 +1,6 @@
 import { expect, assert } from "chai"
 import { describe } from "mocha"
-import { createDatabase, SiamDatabase } from "../src/index"
+import { createDatabase, SiamDatabase } from "../src/main"
 import { Options, Schema, ResponseDoc, IdTypeOptions } from "../src/types"
 
 const options: Options = { generateIds: IdTypeOptions.AUTOINC }

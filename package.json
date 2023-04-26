@@ -1,13 +1,19 @@
 {
-  "name": "iamdb",
-  "version": "1.0.0",
-  "description": "In App Memory Database",
-  "main": "index.js",
+  "name": "siamdb",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ttrreevvoorr/siamdb.git"
+  },
+  "version": "1.0.2",
+  "description": "Serverside In App Memory Database",
+  "main": "lib/main.js",
   "scripts": {
+    "build": "rm ./lib/* && tsc",
     "test": "nyc mocha --require ts-node/register test/**/*.test.ts"
   },
-  "author": "",
+  "author": "ttrreevvoorr",
   "license": "ISC",
+  "files": ["lib"],
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
