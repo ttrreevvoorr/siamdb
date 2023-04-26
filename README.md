@@ -24,7 +24,7 @@ generateIds may be `autoinc` or `uuid`
 ```typescript
 import { createDatabase } from "siamdb"
 // or
-const { createDatabase } = require("siam-database")
+const { createDatabase } = require("siamdb")
 ```
 
 Then, create a new instance of the database by calling createDatabase and passing in an options object and a schema object:
