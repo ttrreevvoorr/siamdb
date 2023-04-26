@@ -1,12 +1,6 @@
 # Siam DB
 **S**erverside **I**n-**A**pp **M**emory **DB** for node that provides a simple and lightweight database with support for multiple collections of documents.
 
----
-
-**⚠️ This is not production-ready software. This project is in active development. ⚠️**
-
----
-
 ## Installation
 
 ```
