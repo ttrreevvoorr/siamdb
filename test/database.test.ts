@@ -7,7 +7,8 @@ const options: Options = { generateIds: IdTypeOptions.AUTOINC }
 const schema: Schema = {
   users: { name: "string", age: "number", bio: "object" },
 }
-const db = createDatabase({ options, schema })
+const db = createDatabase(options, schema)
+const db2 = createDatabase()
 
 describe("SiamDatabase", () => {
   describe("constructor", () => {
@@ -24,7 +25,7 @@ describe("SiamDatabase", () => {
         expect(collection).to.have.property("create")
         expect(collection).to.have.property("find")
         expect(collection).to.have.property("update")
-        // expect(collection).to.have.property("delete");
+        expect(collection).to.have.property("delete");
       })
 
       it("should have two successful .create({...})", () => {

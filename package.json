@@ -4,8 +4,22 @@
     "type": "git",
     "url": "git+https://github.com/ttrreevvoorr/siamdb.git"
   },
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Serverside In App Memory Database",
+  "keywords":[
+    "minimal",
+    "simple",
+    "database",
+    "memory",
+    "server",
+    "realtime",
+    "lightweight",
+    "light",
+    "db",
+    "document",
+    "storage"
+  ],
+  "type":"commonjs",
   "main": "lib/main.js",
   "scripts": {
     "build": "rm ./lib/* && tsc",

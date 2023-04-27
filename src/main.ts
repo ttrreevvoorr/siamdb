@@ -259,12 +259,6 @@ class Collection implements CollectionType {
   }
 }
 
-export const createDatabase = ({
-  options = {},
-  schema = {},
-}: {
-  options?: Options
-  schema?: Schema
-}) => {
+export const createDatabase = (options?: Options, schema?: Schema) => {
   return new SiamDatabase({ options, schema })
 }
