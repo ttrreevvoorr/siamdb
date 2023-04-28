@@ -16,10 +16,104 @@ Siam DB is a simple, lightweight in-app memory database for Node.js that provide
  - Suitable for storing chat messages in a real-time application, where the persistence of the message history is trivial.
 
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start Example](#quick-start-example)
+- [Usage](#usage)
+  - [Create database](#create-database)
+- [Collections](#collections)
+  - [Advanced queries](#advanced-queries)
+  - [Responses](#responses)
+- [Database Parameters](#database-parameters)
+  - [Options](#options)
+  - [Schema](#schema)
+ - [ToDo](#todo)
+
 ## Installation
 
 ```
 npm install siamdb
+```
+
+## Quick Start Example
+
+Create a file in your project called `siamdb.js` or `siam.ts` if you're using Typescript
+
+```typescript
+import { createDatabase } from "siamdb"
+// or
+const { createDatabase } = require("siamdb")
+
+const options = {
+  generateIds: "uuid"
+};
+
+const schema = {
+  users: {
+    name: "string",
+    email: "string",
+    age: "number",
+    active: "boolean",
+    children: "object"
+  },
+  posts: {
+    title: "string",
+    content: "string",
+    authorId: "string"
+  }
+};
+
+const siamdb = createDatabase(options, schema);
+
+module.exports = siamdb;
+// or
+export default siamdb;
+```
+
+Import the `siamdb.js` file into your project for use:
+
+```typescript
+const siamdb = require("./siamdb_instance")
+
+const users = siamdb.collection("users")
+
+// Create a document inside of the users collection
+let newUserId = users.create({ name:"Beavis", age:19 }) // creates a documents returns a string
+
+// Find the new document by id
+let foundUser = users.find({id:newUserId}) // returns array of found documents
+
+// Update the age of Beavis to 20
+let updatedUser =  users.update({ id: newUserId }, { age:20 }) // returns array of updated documents
+
+console.log(JSON.stringify({ newUserId, foundUser, updatedUser }))
+//{
+//  "newUserId": "3517261c-e793-4e6d-89e4-b3976292c71f",
+//  "foundUser": [
+//    {
+//      "id": "3517261c-e793-4e6d-89e4-b3976292c71f",
+//      "content": {
+//        "name": "Beavis",
+//        "age": 19
+//      },
+//      "version": 1
+//    }
+//  ],
+//  "updatedUser": [
+//    {
+//      "id": "3517261c-e793-4e6d-89e4-b3976292c71f",
+//      "content": {
+//        "name": "Beavis",
+//        "age": 20
+//      },
+//      "version": 2
+//    }
+//  ]
+//}
+
+
+users.delete({id:newUserId})
 ```
 
 ## Usage
@@ -39,7 +133,7 @@ Then, create a new instance of the database by calling createDatabase and passin
 ```typescript
 const options = {
   generateIds: "autoinc"
-}
+};
 
 const schema = {
   users: {
@@ -54,9 +148,9 @@ const schema = {
     content: "string",
     authorId: "string"
   }
-}
+};
 
-const database = createDatabase(options, schema)
+const database = createDatabase(options, schema);
 ```
 
 Or you may omit `options` and `schema` entirely, opting for uuids for ids, and no limitations to the collections you can create and key value types you can use within:
@@ -64,6 +158,8 @@ Or you may omit `options` and `schema` entirely, opting for uuids for ids, and n
 ```typescript
 const database = createDatabase()
 ```
+
+## Collections
 
 Once you have a SiamDatabase instance, you can access the collections by calling the collection method:
 
@@ -128,7 +224,7 @@ db.collection("user").find({
 
 ### Responses
 
-### find()
+#### find()
 
 The `find()` method returns an array of documents
 
@@ -144,7 +240,7 @@ The `find()` method returns an array of documents
 ]
 ```
 
-### update()
+#### update()
 
 The `update()` method returns an array of updated documents
 
@@ -160,7 +256,7 @@ The `update()` method returns an array of updated documents
 ]
 ```
 
-### create()
+#### create()
 
 The `create()` method returns a `string` of new document's id
 
@@ -170,7 +266,7 @@ The `create()` method returns a `string` of new document's id
 "3f9b4392-5257-4cb2-9cad-6bb5dad95424"
 ```
 
-### delete()
+#### delete()
 
 The `delete()` method returns an `array` of the deleted document ids
 
@@ -180,14 +276,14 @@ The `delete()` method returns an `array` of the deleted document ids
 ["3f9b4392-5257-4cb2-9cad-6bb5dad95424"]
 ```
 
-### Database Parameters
+## Database Parameters
 
 The `createDatabase` function accepts an optional `options` object as the first parameter and an optional `schema` object as the second parameter:
 ```typescript
 const database = createDatabase(options, schema)
 ```
 
-#### Options
+### Options
 
 The `options` object contains:
 
