@@ -10,7 +10,4 @@ export declare class SiamDatabase {
     });
     collection(collection: string): CollectionType;
 }
-export declare const createDatabase: ({ options, schema, }: {
-    options?: Options | undefined;
-    schema?: Schema | undefined;
-}) => SiamDatabase;
+export declare const createDatabase: (options?: Options, schema?: Schema) => SiamDatabase;
