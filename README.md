@@ -8,9 +8,6 @@ Siam DB is a simple, lightweight in-app memory database for Node.js that provide
 
 **IMPORTANT**: Siam DB does not currently include any persistence mechanism to store data beyond the lifecycle of the application. **Therefore, when the application is restarted, all the data in the database will be lost.**
 
-
-## Key Features
-
 - Ideal for quickly storing and retrieving data during the testing and prototyping phase of development, without the need for a full database.
  - Efficient caching for frequently accessed data in memory for quick access.
  - Suitable for storing chat messages in a real-time application, where the persistence of the message history is trivial.
