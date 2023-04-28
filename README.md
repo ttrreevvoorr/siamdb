@@ -38,7 +38,7 @@ npm install siamdb
 
 ## Quick Start Example
 
-Create a file in your project called `siamdb.js` or `siam.ts` if you're using Typescript
+Create a file in your project called `siamdb.js` or `siamdb.ts` if you're using Typescript
 
 ```typescript
 import { createDatabase } from "siamdb"
