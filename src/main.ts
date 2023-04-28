@@ -42,6 +42,9 @@ export class SiamDatabase {
   }
 
   public collection(collection: string): CollectionType {
+    if (!collection) {
+      throw new Error("Can not represent an empty collection")
+    }
     if (!this.collections[collection]) {
       this.collections[collection] = new Collection({
         options: this.options,
@@ -65,10 +68,60 @@ class Collection implements CollectionType {
   /**
    * Find an array of documents matching the query
    * @param {object} where: the id and/or any key:val pairs for an OR lookup
-   * @returns {array} The documents stored in the collection that match the query
+   * @returns {array} The documents stored inThe `update()` method returns lection that match the query
    **/
   public find(where: { id?: string; [key: string]: any } = {}): ResponseDoc[] {
     const results: ResponseDoc[] = []
+
+    const isOperator = (op: string): boolean => {
+      return op.charAt(0) === "$"
+    }
+
+    const _evaluateOperator = (
+      op: string,
+      fieldValue: any,
+      queryValue: any
+    ): boolean => {
+      switch (op) {
+        case "$gt":
+          return fieldValue > queryValue
+        case "$lt":
+          return fieldValue < queryValue
+        case "$exists":
+          return queryValue
+            ? fieldValue !== undefined
+            : fieldValue === undefined
+        case "$in":
+          return Array.isArray(queryValue) && queryValue.includes(fieldValue)
+        case "$nin":
+          return Array.isArray(queryValue) && !queryValue.includes(fieldValue)
+        case "$ne":
+          return fieldValue !== queryValue
+        case "$gte":
+          return fieldValue >= queryValue
+        case "$lte":
+          return fieldValue <= queryValue
+        default:
+          return false
+      }
+    }
+
+    const _evaluateCondition = (fieldValue: any, queryValue: any): boolean => {
+      if (typeof queryValue === "object" && !Array.isArray(queryValue)) {
+        for (const operator in queryValue) {
+          if (
+            isOperator(operator) &&
+            !_evaluateOperator(operator, fieldValue, queryValue[operator])
+          ) {
+            return false
+          }
+        }
+
+        return true
+      } else {
+        return fieldValue === queryValue
+      }
+    }
 
     if (where.id) {
       const document = this.documents[where.id]
@@ -82,14 +135,41 @@ class Collection implements CollectionType {
     } else {
       for (const key in this.documents as Document) {
         const document = this.documents[key]
-        let docFound = true
+        const orConditions = where.$or || ([where] as { [key: string]: any }[])
+        const andConditions = where.$and || []
 
-        for (const query in where) {
-          if (document.content[query] !== where[query]) {
-            docFound = false
-            break
+        let docFound = orConditions.some(
+          (orCondition: { [key: string]: any }) => {
+            for (const query in orCondition) {
+              if (
+                !_evaluateCondition(document.content[query], orCondition[query])
+              ) {
+                return false
+              }
+            }
+            return true
+          }
+        )
+
+        if (docFound) {
+          for (const andCondition of andConditions) {
+            for (const query in andCondition) {
+              if (
+                !_evaluateCondition(
+                  document.content[query],
+                  andCondition[query]
+                )
+              ) {
+                docFound = false
+                break
+              }
+            }
+            if (!docFound) {
+              break
+            }
           }
         }
+
         if (docFound) {
           results.push({
             id: key,

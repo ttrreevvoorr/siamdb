@@ -11,13 +11,27 @@ const db = createDatabase(options, schema)
 const db2 = createDatabase()
 
 describe("SiamDatabase", () => {
-  describe("constructor", () => {
-    it("should create a new instance with a schema and options", () => {
-      expect(db).to.be.an.instanceOf(SiamDatabase)
+  describe("createDatabase", () => {
+    it("should create a new instance with default options when called without arguments", () => {
+      const defaultDb = createDatabase()
+      expect(defaultDb).to.be.an.instanceOf(SiamDatabase)
+    })
+
+    it("should create a new instance with the provided options when called with arguments", () => {
+      const customDb = createDatabase(options, schema)
+      expect(customDb).to.be.an.instanceOf(SiamDatabase)
     })
   })
 
   describe("Collection", () => {
+    describe('.collection("...")', () => {
+      it("should throw an error when called with an invalid collection name", () => {
+        expect(() => db.collection("")).to.throw(
+          "Can not represent an empty collection"
+        )
+      })
+    })
+
     describe(".create(...) with schema", () => {
       it("should return a Collection object", () => {
         const collection = db.collection("users")
@@ -25,7 +39,7 @@ describe("SiamDatabase", () => {
         expect(collection).to.have.property("create")
         expect(collection).to.have.property("find")
         expect(collection).to.have.property("update")
-        expect(collection).to.have.property("delete");
+        expect(collection).to.have.property("delete")
       })
 
       it("should have two successful .create({...})", () => {
@@ -117,6 +131,12 @@ describe("SiamDatabase", () => {
     describe(".find(...)", () => {
       const collection = db.collection("users")
 
+      it("should return all documents when called with an empty object", () => {
+        const allDocs = db.collection("users").find({})
+        expect(allDocs).to.be.an("array")
+        expect(allDocs.length).to.equal(2) // Assuming there are 2 documents in the collection
+      })
+
       it("should have a successful .find({id: '1'}) and return all values", () => {
         const user1 = collection.find({ id: "1" })[0] as ResponseDoc
         expect(user1).to.have.property("content")
@@ -150,6 +170,53 @@ describe("SiamDatabase", () => {
         expect(user1[0].content).to.have.property("bio")
         expect(user1[0].content.bio).to.have.property("english")
         expect(user1[0].content.bio).to.have.property("spanish")
+      })
+
+      it("should have a successful .find({&gt, &lt, $exists}) and return an array with all values", () => {
+        const collection = db2.collection("user")
+        collection.create({
+          name: "John Doe",
+          age: 25,
+          email: "john.doe@example.com",
+          status: "active",
+          score: 75,
+          favoriteColors: ["red", "blue"],
+          city: "New York",
+          active: true,
+          verified: true,
+          createdAt: new Date("2023-02-15"),
+        })
+
+        let user = collection.find({
+          age: { $gte: 0, $lte: 30 },
+          email: { $exists: true },
+          status: { $ne: "inactive" },
+          score: { $gt: 0, $lt: 100 },
+          favoriteColors: { $in: ["red", "blue"], $nin: ["green", "yellow"] },
+          $or: [{ city: "New York" }, { city: "San Francisco" }],
+          $and: [
+            { active: true },
+            { verified: true },
+            {
+              createdAt: {
+                $gte: new Date("2023-01-01"),
+                $lt: new Date("2023-04-01"),
+              },
+            },
+          ],
+        })
+        user = collection.find({
+          age: { $gte: 0, $lte: 30 },
+        })
+        expect(user).to.be.an("array")
+
+        expect(user[0]).to.have.property("content")
+        expect(user[0]).to.have.property("version")
+        expect(user[0].content).to.have.property("name")
+        expect(user[0].content).to.have.property("age")
+        expect(user[0].content).to.have.property("active")
+        expect(user[0].content).to.have.property("verified")
+        expect(user[0].content).to.have.property("city")
       })
 
       it("should return empty array when .find(...) returns no values", () => {
