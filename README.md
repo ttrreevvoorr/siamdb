@@ -17,14 +17,12 @@ Siam DB is a simple, lightweight in-app memory database for Node.js that provide
 
 
 ## Installation
----
 
 ```
 npm install siamdb
 ```
 
 ## Usage
----
 
 ### Create database
 
@@ -129,7 +127,6 @@ db.collection("user").find({
 ```
 
 ### Responses
----
 
 ### find()
 
@@ -184,14 +181,13 @@ The `delete()` method returns an `array` of the deleted document ids
 ```
 
 ### Database Parameters
----
-
-#### Options
 
 The `createDatabase` function accepts an optional `options` object as the first parameter and an optional `schema` object as the second parameter:
 ```typescript
 const database = createDatabase(options, schema)
 ```
+
+#### Options
 
 The `options` object contains:
 
@@ -234,9 +230,9 @@ const database = createDatabase(..., {
 
 
 ## ToDo:
----
 
 - Implement some type of `ttl` on collections and/or documents.
+- Allow file saves/backups as an optional
 
 
 
