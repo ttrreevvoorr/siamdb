@@ -1,5 +1,5 @@
 
-<p style="text-align: center;"><img alt="siam db"style="width:600px" src="https://user-images.githubusercontent.com/53444861/235057433-91f622fa-05e8-4a69-a5a2-5cb7e3082f96.png"/></p>
+<p style="text-align: center;"><img alt="siam db"style="width:300px" src="https://user-images.githubusercontent.com/53444861/235057433-91f622fa-05e8-4a69-a5a2-5cb7e3082f96.png"/></p>
 
 --- 
 **S**erverside **I**n-**A**pp **M**emory **DB**
