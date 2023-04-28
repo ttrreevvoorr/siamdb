@@ -74,7 +74,7 @@ export default siamdb;
 Import the `siamdb.js` file into your project for use:
 
 ```typescript
-const siamdb = require("./siamdb_instance")
+const siamdb = require("./siamdb")
 
 const users = siamdb.collection("users")
 
